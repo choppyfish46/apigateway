@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+    
+       
+    tools {
+        "org.jenkinsci.plugins.terraform.TerraformInstallation" "terraform"
+    }
+    
+    
+    
+    parameters {
+        string(name: 'WORKSPACE', defaultValue: 'development', description:'setting up workspace for terraform')
+        string(name: 'name', defaultValue: 'api-demo', description:'name of api')
+        string(name: 'domain', defaultValue: 'api.dev04.ow.rginger.com', description:'domain name of api')
+    }
+    environment {
+        TF_HOME = tool('terraform')
+        TF_IN_AUTOMATION = "true"
+        PATH = "$TF_HOME:$PATH"
+        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        TF_VAR_access_key = credentials('AWS_ACCESS_KEY_ID')
+        TF_VAR_secret_key = credentials('AWS_SECRET_ACCESS_KEY')
+        
+    }
+
+    stages {
+        stage(‘checkout’) {
+            steps {
+            checkout scm
+            
+            }
+        }        
+                 stage('TerraformInit'){
+                 steps {
+                    dir('apigw'){
+                        sh "terraform init -input=false"
+                        sh "echo \$PWD"
+                        sh "whoami"
+                        sh "terraform plan  -var name=${params.name} -var domain=${params.domain} -out=plan"
+                        sh "terraform apply plan"
+                        
+                    }
+               
+            }
+        }
+        
+        }
+    
+}
